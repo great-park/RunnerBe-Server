@@ -31,10 +31,11 @@ exports.createUser = async function (
     if (uuidRows.length > 0)
       return errResponse(baseResponse.SIGNUP_REDUNDANT_UUID);
 
-    //nickName 중복 확인
-    const nickNameRows = await userProvider.nickNameCheck(nickName);
-    if (nickNameRows.length > 0)
-      return errResponse(baseResponse.SIGNUP_REDUNDANT_NICKNAME);
+    // //nickName 중복 확인
+    // const nickNameRows = await userProvider.nickNameCheck(nickName);
+    // if (nickNameRows.length > 0)
+    //   return errResponse(baseResponse.SIGNUP_REDUNDANT_NICKNAME);
+    const randomNickname = await generateNickname();
 
     // 직군코드 유효 확인
     const checkJob = await userProvider.checkJobExist(job);
@@ -53,7 +54,7 @@ exports.createUser = async function (
         return errResponse(baseResponse.SIGNUP_REDUNDANT_EMAIL);
       const insertUserInfoParams = [
         uuid,
-        nickName,
+        randomNickname,
         birthday,
         gender,
         job,
@@ -89,7 +90,7 @@ exports.createUser = async function (
       const hashedEmail = officeEmail;
       const insertUserInfoParams = [
         uuid,
-        nickName,
+        randomNickname,
         birthday,
         gender,
         job,
@@ -427,3 +428,18 @@ exports.getMyAlarms = async function (userId) {
     await connection.release();
   }
 };
+
+async function generateNickname() {
+  const prefix = "Runner";
+  const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+  const nickname = prefix + randomNum;
+
+  let duplicatedNicknames = await userProvider.nickNameCheck(nickname);
+  while (duplicatedNicknames.length > 0) {
+    const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+    const nickname = prefix + randomNum;
+    duplicatedNicknames = await userProvider.nickNameCheck(nickname);
+  }
+
+  return nickname;
+}
